@@ -2,6 +2,10 @@
   box-sizing: border-box;
 }
 
+input:focus {
+  outline: none;
+}
+
 .container {
   margin-top: 40px;
   display: flex;
@@ -15,7 +19,7 @@
   font-weight: bold;
   font-size: 24px;
   font-family: "Blogger Sans", sans-serif;
-  color: dodgerblue;
+  color: coral;
 }
 
 .content {

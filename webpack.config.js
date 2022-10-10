@@ -13,6 +13,9 @@ module.exports = {
     filename: '[name].js',
     path: path.resolve(__dirname, 'dist')
   },
+  resolve: {
+    extensions: ['.ts', '.tsx', '.js', 'json']
+  },
   devServer: {
     historyApiFallback: true,
     static: {

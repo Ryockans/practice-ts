@@ -1,0 +1,127 @@
+.todo-app {
+  padding: 30px;
+  max-width: 1000px;
+  width: 40%;
+  border-radius: 10px;
+  border: 1px solid lightseagreen;
+  box-shadow: 0 0 5px #0e4a46;
+}
+
+.todo-app__create-task {
+  margin-bottom: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  border: 2px solid lightseagreen;
+  border-radius: 5px;
+}
+
+.todo-app__input {
+  padding-left: 46px;
+  width: 100%;
+  height: 100%;
+  font-size: 20px;
+  border: none;
+}
+
+.todo-app__add {
+  width: 50px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  right: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.3s;
+}
+
+.todo-app__add:hover {
+  transform: rotate(90deg);
+}
+
+.todo-app__add::after {
+  content: '';
+  display: block;
+  position: absolute;
+  width: 25px;
+  height: 3px;
+  background-color: #0e4a46;
+  border-radius: 10em;
+}
+.todo-app__add::before {
+  content: '';
+  display: block;
+  position: absolute;
+  width: 25px;
+  height: 3px;
+  background-color: #0e4a46;
+  border-radius: 10em;
+  transform: rotate(-90deg);
+}
+
+.todo-app__display {
+  display: grid;
+}
+
+.todo-app__control-panel {
+  margin-top: 50px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.todo-app__tabs {
+  display: grid;
+  grid-template-columns: repeat(3, max-content);
+  column-gap: 10px;
+  font-family: "Blogger Sans", sans-serif;
+  user-select: none;
+}
+
+.todo-app__tab {
+  cursor: pointer;
+}
+
+.todo-app__tab:hover {
+  color: cornflowerblue;
+}
+
+.todo-app__radio:checked + .todo-app__tab {
+  color: #2065e1;
+}
+
+.todo-app__radio {
+  display: none;
+}
+
+.todo-app__tasklist {
+  border-radius: 4px;
+}
+
+
+.todo-app__clear {
+  border: 1px solid cornflowerblue;
+  border-radius: 10em;
+  background: none;
+  font-family: "Blogger Sans", sans-serif;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.todo-app__clear:hover {
+  background-color: cornflowerblue;
+  color: white;
+}
+
+.todo-app__clear:active {
+  opacity: 0.74;
+  box-shadow: 0 0 10px rgba(32, 101, 225, 0.25);
+}
+
+.todo-app__counter {
+  font-family: "Blogger Sans", sans-serif;
+}

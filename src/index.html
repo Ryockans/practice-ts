@@ -2,13 +2,49 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Title</title>
+  <title>To-Do App</title>
   <link rel="icon" href="favicon.ico" type="image/ico">
 </head>
 <body>
 <div class="container">
-  <h2 class="header">Header</h2>
-  <p class="text">Text</p>
+  <h2 class="header">TODO APP</h2>
+  <div class="todo-app">
+    <form class="todo-app__create-task">
+      <input class="todo-app__input" type="text" placeholder="Create a new todo...">
+      <button class="todo-app__add"></button>
+    </form>
+
+    <div class="todo-app__display">
+      <ul class="todo-app__tasklist">
+      </ul>
+
+      <div class="todo-app__control-panel">
+        <p class="todo-app__counter">
+          <span class="todo-app__counter-number">0</span> items left
+        </p>
+
+        <div class="todo-app__tabs">
+
+          <input type="radio" name="filter" class="todo-app__radio" id="filter-all" checked>
+          <label class="todo-app__tab -active" for="filter-all" data-status="all">
+            All
+          </label>
+
+          <input type="radio" name="filter" class="todo-app__radio" id="filter-active">
+          <label class="todo-app__tab" data-status="active" for="filter-active">
+            Active
+          </label>
+
+          <input type="radio" name="filter" class="todo-app__radio" id="filter-completed">
+          <label class="todo-app__tab" data-status="completed" for="filter-completed">
+            Completed
+          </label>
+        </div>
+
+        <button class="todo-app__clear">Clear Completed</button>
+      </div>
+    </div>
+  </div>
 </div>
 </body>
 </html>
