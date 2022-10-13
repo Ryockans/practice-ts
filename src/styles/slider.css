@@ -1,0 +1,124 @@
+.slider__wrapper {
+  padding: 10px;
+  min-width: 250px;
+  width: 50%;
+  display: grid;
+  grid-template-columns: max-content 1fr max-content;
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 10px;
+  box-shadow: 0 0 12px cornflowerblue;
+  border-radius: 10px;
+}
+
+.slider__dots {
+  justify-self: center;
+  display: flex;
+  grid-column: 1/4;
+}
+
+.slider__display {
+  min-width: 150px;
+  overflow: hidden;
+}
+
+.slider {
+  display: flex;
+  transform: translate(0);
+  transition: transform 0.5s;
+}
+
+.slider__item {
+  margin: 0 10px;
+  min-width: 100%;
+  min-height: 100px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: dodgerblue;
+  color: white;
+  font-size: 40px;
+  font-family: "Comic Sans MS", sans-serif;
+}
+
+.slider__item:first-of-type {
+  margin-left: 0;
+}
+
+.slider__button {
+  width: 30px;
+  height: 30px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: none;
+  border-radius: 50%;
+  background-color: rgba(100, 149, 237);
+  transition: background-color 300ms;
+  cursor: pointer;
+}
+
+.slider__button:hover {
+  background-color: rgba(100, 149, 237, 0.74);
+}
+
+.slider__button:active {
+  background-color: rgb(32, 104, 232);
+  transition: background-color 0s;
+}
+
+.slider__button.-previous::before {
+  content: '<';
+  top: -11px;
+  position: absolute;
+  color: white;
+  font-family: "Comic Sans MS", sans-serif;
+  font-size: 34px;
+}
+
+.slider__button.-next::before {
+  content: '>';
+  top: -11px;
+  position: absolute;
+  color: white;
+  font-family: "Comic Sans MS", sans-serif;
+  font-size: 34px;
+}
+
+.slider__dots {
+  display: flex;
+  justify-content: space-between;
+}
+
+
+.dot {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: none;
+  border: none;
+  position: relative;
+  cursor: pointer;
+}
+
+.dot::before {
+  width: 7px;
+  height: 7px;
+  content: '';
+  position: absolute;
+  background: rgba(31, 31, 107, 0.5);
+  border-radius: 50%;
+  transition: background-color 300ms;
+  z-index: 2;
+}
+
+.dot:hover::before {
+  background: rgba(31, 31, 107, 0.9);
+}
+
+.dot.-active::before {
+  background: rgba(31, 31, 107, 1);
+}
