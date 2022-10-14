@@ -1,7 +1,7 @@
-import {Slider, Selectors} from "./types";
+import {Slider, Options, ResponsiveParameters, Parameters, Mode} from "./types";
 
 export class MySlider implements Slider {
-  selectors: Selectors;
+  selectors: Options["selectors"];
   slider: HTMLElement;
   display: HTMLElement;
   slides: HTMLElement[];
@@ -9,20 +9,46 @@ export class MySlider implements Slider {
   buttonPrevious: HTMLElement;
   dotButtonsContainer: HTMLElement;
   switchButtons: HTMLElement[];
+  mode: Mode;
+  parameters: Parameters;
+  responsive?: ResponsiveParameters[];
   currentSlideIndex: number;
 
-  constructor(selectors: Selectors) {
-    this.selectors = selectors;
-    this.display = document.querySelector(selectors.display);
-    this.slider = document.querySelector(selectors.slider);
-    this.slides = Array.from(document.querySelectorAll(selectors.slides));
-    this.buttonNext = document.querySelector(selectors.buttonNext);
-    this.buttonPrevious = document.querySelector(selectors.buttonPrevious);
-    this.dotButtonsContainer = document.querySelector(selectors.dotButtonsContainer);
+  constructor(options: Options) {
+    this.selectors = options.selectors;
+    this.display = document.querySelector(this.selectors.display);
+    this.slider = document.querySelector(this.selectors.slider);
+    this.slides = Array.from(document.querySelectorAll(this.selectors.slides));
+    this.buttonNext = document.querySelector(this.selectors.buttonNext);
+    this.buttonPrevious = document.querySelector(this.selectors.buttonPrevious);
+    this.dotButtonsContainer = document.querySelector(this.selectors.dotButtonsContainer);
     this.switchButtons = [] as HTMLElement[];
+
+    this.mode = options.mode;
+    this.parameters = {
+      animationTime: options.parameters.animationTime,
+      slidesToShow: options.parameters.slidesToShow,
+      slidesToScroll: options.parameters.slidesToScroll,
+      isLooped: options.parameters.isLooped,
+    };
+
+    if (this.mode === 'Single item') {
+      this.parameters.slidesToShow = 1;
+      this.parameters.slidesToScroll = 1;
+    }
+
+    if (this.mode === 'Multiple item' && options.responsive !== undefined) {
+      this.responsive = options.responsive;
+    }
+  }
+
+  get lastSlideIndex() {
+    return this.slides.length - 1;
   }
 
   init() {
+    this.slider.style.transition = `transform ${this.parameters.animationTime}ms`;
+
     this.buttonNext.addEventListener('click', () => this.nextSlide());
     this.buttonPrevious.addEventListener('click', () => this.previousSlide());
 
@@ -46,10 +72,12 @@ export class MySlider implements Slider {
       const slideIndex = this.findSlideIndex(event.target);
       this.switchToSlide(slideIndex);
     });
-  }
 
-  get lastSlideIndex() {
-    return this.slides.length - 1;
+    window.addEventListener('resize', () => this.recalculate());
+
+    if (!this.parameters.isLooped) {
+      this.toggleButtons(0);
+    }
   }
 
   private forbidButtonsClick(ms) {
@@ -62,18 +90,46 @@ export class MySlider implements Slider {
     }, ms)
   }
 
-  shift(slideIndex: number, delay: number = 500) {
-    console.dir(slideIndex);
+  private toggleButtons(delay = this.parameters.animationTime) {
 
-    this.forbidButtonsClick(delay);
+    setTimeout(() => {
+      if (this.currentSlideIndex === 0) {
 
+        this.buttonPrevious.classList.add('-inactive');
+        if (this.buttonNext.classList.contains('-inactive')) this.buttonNext.classList.remove('-inactive');
+
+      } else if (this.currentSlideIndex === this.lastSlideIndex) {
+
+        this.buttonNext.classList.add('-inactive');
+        if (this.buttonPrevious.classList.contains('-inactive')) this.buttonPrevious.classList.remove('-inactive');
+
+      } else {
+        if (this.buttonPrevious.classList.contains('-inactive')) this.buttonPrevious.classList.remove('-inactive');
+        if (this.buttonNext.classList.contains('-inactive')) this.buttonNext.classList.remove('-inactive');
+      }
+    }, delay)
+
+  }
+
+  recalculate() {
+    this.slider.style.transition = 'none';
+    this.shift(this.currentSlideIndex);
+    setTimeout(() => this.slider.style.transition = `transform ${this.parameters.animationTime}ms`, 0);
+  }
+
+  shift(slideIndex: number, delay: number = this.parameters.animationTime) {
     const firstSlideCoords = this.slides[0].getBoundingClientRect()
     const targetSlide = this.slides[slideIndex];
     const targetRect = targetSlide.getBoundingClientRect();
     const style = this.slider.style;
     const shift = firstSlideCoords.left - targetRect.left;
 
+    this.forbidButtonsClick(delay);
     style.transform = `translate(${shift}px)`;
+
+    if (!this.parameters.isLooped) {
+      this.toggleButtons();
+    }
   }
 
   loopSlider(isForward: Boolean) {
@@ -93,48 +149,57 @@ export class MySlider implements Slider {
         this.shift(0, delay);
 
         setTimeout(() => {
-          style.transition = 'transform 500ms';
+          style.transition = `transform ${this.parameters.animationTime}ms`;
         }, delay);
 
         surrogate.remove();
         this.slides.pop();
-      }, 500);
+      }, this.parameters.animationTime);
 
     } else {
       surrogate = this.slides[this.lastSlideIndex].cloneNode(true) as HTMLElement;
 
+      setTimeout(() => {
+        this.slider.prepend(surrogate);
+        this.slides.push(surrogate);
+        style.transition = 'none';
+        this.shift(1, delay);
+
         setTimeout(() => {
-            this.slider.prepend(surrogate);
-            this.slides.push(surrogate);
+          style.transition = `transform ${this.parameters.animationTime}ms`;
+          this.shift(0);
+
+          setTimeout(() => {
+
             style.transition = 'none';
-            this.shift(1, delay);
+            this.shift(this.lastSlideIndex - 1, delay);
 
             setTimeout(() => {
-                style.transition = 'transform 500ms';
-                this.shift(0);
-
-                setTimeout(() => {
-
-                    style.transition = 'none';
-                    this.shift(this.lastSlideIndex - 1, delay);
-
-                    setTimeout(() => {
-                        style.transition = 'transform 500ms';
-                    }, delay);
-
-                    surrogate.remove();
-                    this.slides.pop();
-                }, 500);
+              style.transition = `transform ${this.parameters.animationTime}ms`;
             }, delay);
-        }, 0)
+
+            surrogate.remove();
+            this.slides.pop();
+          }, this.parameters.animationTime);
+        }, delay);
+      }, 0)
     }
   }
 
   changeActiveButton(index: number) {
     const lastSlideIndex = this.slides.length - 1;
 
-    if (index > lastSlideIndex) index = 0;
-    if (index < 0) index = lastSlideIndex;
+    if (this.parameters.isLooped) {
+      if (index > lastSlideIndex) index = 0;
+      if (index < 0) index = lastSlideIndex;
+    } else {
+      if (index > lastSlideIndex) {
+        return
+      }
+      if (index < 0) {
+        return;
+      }
+    }
 
     this.switchButtons[this.currentSlideIndex].classList.remove('-active');
     this.switchButtons[index].classList.add('-active');
@@ -152,7 +217,9 @@ export class MySlider implements Slider {
     this.changeActiveButton(this.currentSlideIndex + 1);
 
     if (this.currentSlideIndex - oldIndex === -lastSlideIndex) {
-      this.loopSlider(true)
+      if (this.parameters.isLooped) {
+        this.loopSlider(true);
+      }
       return;
     }
 
@@ -167,7 +234,9 @@ export class MySlider implements Slider {
 
 
     if (this.currentSlideIndex - oldIndex === lastSlideIndex) {
-      this.loopSlider(false)
+      if (this.parameters.isLooped) {
+        this.loopSlider(false)
+      }
       return
     }
 
