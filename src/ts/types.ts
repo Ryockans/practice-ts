@@ -3,9 +3,11 @@ export interface Slider {
 
   recalculate(): void;
 
-  shift(slideIndex: number, ms: number): void;
+  shift(slideIndex: number, forLoop: boolean, ms: number): void;
 
-  loopSlider(isForward: Boolean): void;
+  loopStartToEnd(): void;
+
+  loopEndToStart(): void;
 
   findSlideIndex(sliderSwitch: HTMLElement): number;
 

@@ -5,6 +5,7 @@ export class MySlider implements Slider {
   slider: HTMLElement;
   display: HTMLElement;
   slides: HTMLElement[];
+  activeSlides: HTMLElement[];
   buttonNext: HTMLElement;
   buttonPrevious: HTMLElement;
   dotButtonsContainer: HTMLElement;
@@ -22,7 +23,8 @@ export class MySlider implements Slider {
     this.buttonNext = document.querySelector(this.selectors.buttonNext);
     this.buttonPrevious = document.querySelector(this.selectors.buttonPrevious);
     this.dotButtonsContainer = document.querySelector(this.selectors.dotButtonsContainer);
-    this.switchButtons = [] as HTMLElement[];
+    this.switchButtons = [];
+    this.activeSlides = [];
 
     this.mode = options.mode;
     this.parameters = {
@@ -42,27 +44,53 @@ export class MySlider implements Slider {
     }
   }
 
+  private get sliderStart() {
+    return this.slider.getBoundingClientRect().left;
+  }
+
   get lastSlideIndex() {
-    return this.slides.length - 1;
+    return this.activeSlides.length - 1;
   }
 
   init() {
+
+    this.errorCheck();
+
     this.slider.style.transition = `transform ${this.parameters.animationTime}ms`;
 
-    this.buttonNext.addEventListener('click', () => this.nextSlide());
-    this.buttonPrevious.addEventListener('click', () => this.previousSlide());
+    this.createDots();
 
-    const slideNumber = this.slides.length;
+    this.addListeners();
 
-    for (let i = 0; i < slideNumber; i++) {
-      const dot = document.createElement('button');
-      dot.classList.add('dot');
-      this.switchButtons.push(dot);
-      this.dotButtonsContainer.append(dot);
+    if (!this.parameters.isLooped) {
+      this.toggleButtons(0);
+    }
+  }
+
+  createDots() {
+    const slidesAmount = this.slides.length;
+    const limit = Math.ceil((slidesAmount - this.parameters.slidesToShow) / this.parameters.slidesToScroll)
+
+    for (let i = 0; i < slidesAmount; i++) {
+
+      this.slides[i].style.minWidth = `calc((100% - (${this.parameters.slidesToShow} - 1)*20px)/${this.parameters.slidesToShow})`;
+
+      if (i % this.parameters.slidesToScroll === 0 && this.switchButtons.length <= limit) {
+        const dot = document.createElement('button');
+        dot.classList.add('dot');
+        this.switchButtons.push(dot);
+        this.dotButtonsContainer.append(dot);
+        this.activeSlides.push(this.slides[i]);
+      }
     }
 
     this.switchButtons[0].classList.add('-active');
     this.currentSlideIndex = 0;
+  }
+
+  addListeners() {
+    this.buttonNext.addEventListener('click', () => this.nextSlide());
+    this.buttonPrevious.addEventListener('click', () => this.previousSlide());
 
     this.dotButtonsContainer.addEventListener('click', (event) => {
       const isSwitchClick: boolean = this.switchButtons.includes(event.target as HTMLElement);
@@ -74,9 +102,25 @@ export class MySlider implements Slider {
     });
 
     window.addEventListener('resize', () => this.recalculate());
+  }
 
-    if (!this.parameters.isLooped) {
-      this.toggleButtons(0);
+  private errorCheck() {
+    const sliderStyle = this.slider.style;
+
+    if (this.parameters.slidesToShow < this.parameters.slidesToScroll) {
+      this.slider.innerHTML = 'ERROR! <br> SlidesToShow must be more than SlidesToScroll';
+      sliderStyle.backgroundColor = 'red';
+      sliderStyle.padding = '10px';
+      sliderStyle.width = '100%';
+      sliderStyle.height = '200px';
+      sliderStyle.fontSize = '22px';
+      sliderStyle.fontFamily = '"Comic Sans MS", sans-serif';
+      sliderStyle.color = 'white';
+      sliderStyle.display = 'flex';
+      sliderStyle.justifyContent = 'center';
+      sliderStyle.alignItems = 'center';
+      sliderStyle.textAlign = 'center';
+      throw new Error('SlidesToShow must be more than SlidesToScroll');
     }
   }
 
@@ -117,12 +161,20 @@ export class MySlider implements Slider {
     setTimeout(() => this.slider.style.transition = `transform ${this.parameters.animationTime}ms`, 0);
   }
 
-  shift(slideIndex: number, delay: number = this.parameters.animationTime) {
-    const firstSlideCoords = this.slides[0].getBoundingClientRect()
-    const targetSlide = this.slides[slideIndex];
-    const targetRect = targetSlide.getBoundingClientRect();
+  shift(slideIndex, isLastScreen: boolean = false, delay = this.parameters.animationTime) {
+    let targetSlide = this.activeSlides[slideIndex];
+
+    if (this.currentSlideIndex === this.lastSlideIndex) isLastScreen = true;
+
+    if (isLastScreen) {
+      if (this.mode === 'Multiple item' && this.slides.length % this.parameters.slidesToShow !== 0) {
+        targetSlide = this.slides[this.slides.length - this.parameters.slidesToShow];
+      }
+    }
+
+    const targetEdge = targetSlide.getBoundingClientRect().left;
     const style = this.slider.style;
-    const shift = firstSlideCoords.left - targetRect.left;
+    const shift = this.sliderStart - targetEdge;
 
     this.forbidButtonsClick(delay);
     style.transform = `translate(${shift}px)`;
@@ -132,68 +184,82 @@ export class MySlider implements Slider {
     }
   }
 
-  loopSlider(isForward: Boolean) {
-    let surrogate: HTMLElement;
-    const delay = 10;
+  loopEndToStart(delay: number = 10): void {
+    const slideArray: HTMLElement[] = [];
     const style = this.slider.style;
 
-    if (isForward) {
-      surrogate = this.slides[0].cloneNode(true) as HTMLElement;
-
-      this.slider.append(surrogate);
-      this.slides.push(surrogate);
-      this.shift(this.lastSlideIndex);
-
-      setTimeout(() => {
-        style.transition = 'none';
-        this.shift(0, delay);
-
-        setTimeout(() => {
-          style.transition = `transform ${this.parameters.animationTime}ms`;
-        }, delay);
-
-        surrogate.remove();
-        this.slides.pop();
-      }, this.parameters.animationTime);
-
-    } else {
-      surrogate = this.slides[this.lastSlideIndex].cloneNode(true) as HTMLElement;
-
-      setTimeout(() => {
-        this.slider.prepend(surrogate);
-        this.slides.push(surrogate);
-        style.transition = 'none';
-        this.shift(1, delay);
-
-        setTimeout(() => {
-          style.transition = `transform ${this.parameters.animationTime}ms`;
-          this.shift(0);
-
-          setTimeout(() => {
-
-            style.transition = 'none';
-            this.shift(this.lastSlideIndex - 1, delay);
-
-            setTimeout(() => {
-              style.transition = `transform ${this.parameters.animationTime}ms`;
-            }, delay);
-
-            surrogate.remove();
-            this.slides.pop();
-          }, this.parameters.animationTime);
-        }, delay);
-      }, 0)
+    for (let i = 0; i < this.parameters.slidesToShow; i++) {
+      slideArray.push(this.slides[i].cloneNode(true) as HTMLElement);
     }
+
+    for (let slide of slideArray) {
+      this.slider.append(slide);
+    }
+
+    this.activeSlides.push(slideArray[0]);
+
+    this.shift(this.lastSlideIndex);
+
+    setTimeout(() => {
+      style.transition = 'none';
+      this.shift(0, false, delay);
+
+      setTimeout(() => {
+        style.transition = `transform ${this.parameters.animationTime}ms`;
+      }, delay);
+
+      for (let slide of slideArray) {
+        slide.remove();
+      }
+      this.activeSlides.pop();
+    }, this.parameters.animationTime);
+  }
+
+  loopStartToEnd(delay: number = 10): void {
+    const slideArray: HTMLElement[] = [];
+    const style = this.slider.style;
+
+    for (let i = this.slides.length - 1; i > this.slides.length - this.parameters.slidesToShow - 1; i--) {
+      slideArray.push(this.slides[i].cloneNode(true) as HTMLElement);
+    }
+
+    setTimeout(() => {
+      for (let slide of slideArray) {
+        this.slider.prepend(slide);
+      }
+      this.activeSlides.push(slideArray[slideArray.length - 1]);
+
+      style.transition = 'none';
+      this.shift(0, false, delay);
+
+      setTimeout(() => {
+        style.transition = `transform ${this.parameters.animationTime}ms`;
+        style.transform = `translate(0px)`;
+        this.forbidButtonsClick(this.parameters.animationTime);
+        this.activeSlides.pop();
+
+        setTimeout(() => {
+          style.transition = 'none';
+          setTimeout(() => {
+            style.transition = `transform ${this.parameters.animationTime}ms`;
+          }, delay);
+
+          for (let slide of slideArray) {
+            slide.remove();
+          }
+          this.shift(this.lastSlideIndex, true, delay);
+        }, this.parameters.animationTime);
+      }, delay);
+    }, 0)
   }
 
   changeActiveButton(index: number) {
-    const lastSlideIndex = this.slides.length - 1;
 
     if (this.parameters.isLooped) {
-      if (index > lastSlideIndex) index = 0;
-      if (index < 0) index = lastSlideIndex;
+      if (index > this.lastSlideIndex) index = 0;
+      if (index < 0) index = this.lastSlideIndex;
     } else {
-      if (index > lastSlideIndex) {
+      if (index > this.lastSlideIndex) {
         return
       }
       if (index < 0) {
@@ -211,14 +277,13 @@ export class MySlider implements Slider {
   }
 
   nextSlide() {
-    const lastSlideIndex = this.slides.length - 1;
     const oldIndex = this.currentSlideIndex;
 
     this.changeActiveButton(this.currentSlideIndex + 1);
 
-    if (this.currentSlideIndex - oldIndex === -lastSlideIndex) {
+    if (this.currentSlideIndex - oldIndex === -this.lastSlideIndex) {
       if (this.parameters.isLooped) {
-        this.loopSlider(true);
+        this.loopEndToStart();
       }
       return;
     }
@@ -227,15 +292,13 @@ export class MySlider implements Slider {
   }
 
   previousSlide() {
-    const lastSlideIndex = this.slides.length - 1;
     const oldIndex = this.currentSlideIndex;
 
     this.changeActiveButton(this.currentSlideIndex - 1);
 
-
-    if (this.currentSlideIndex - oldIndex === lastSlideIndex) {
+    if (this.currentSlideIndex - oldIndex === this.lastSlideIndex) {
       if (this.parameters.isLooped) {
-        this.loopSlider(false)
+        this.loopStartToEnd()
       }
       return
     }

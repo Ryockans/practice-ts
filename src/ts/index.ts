@@ -10,10 +10,12 @@ const slider = new MySlider({
     dotButtonsContainer: '.slider__dots',
   },
 
-  mode: "Single item",
+  mode: "Multiple item",
   parameters: {
     animationTime: 500,
-    isLooped: true
+    slidesToShow: 3,
+    slidesToScroll: 2,
+    isLooped: true,
   }
 
 });

@@ -29,8 +29,7 @@
 
 .slider__item {
   margin: 0 10px;
-  min-width: 100%;
-  min-height: 100px;
+  min-height: 200px;
   display: flex;
   justify-content: center;
   align-items: center;
