@@ -1,4 +1,4 @@
-import {Slider, Options, ResponsiveParameters, Parameters, Mode} from "./types";
+import {Slider, Options, ResponsiveParameters, Parameters, Mode, SliderEvents} from "./types";
 
 export class MySlider implements Slider {
   selectors: Options["selectors"];
@@ -16,7 +16,8 @@ export class MySlider implements Slider {
   responsive?: ResponsiveParameters[];
   currentSlideIndex: number;
   currentBreakpoint: number | 'max';
-  autoplayTimer?: ReturnType<typeof setTimeout> | null
+  autoplayTimer?: ReturnType<typeof setTimeout> | null;
+  eventsAndHandlers: Options["eventsAndHandlers"];
 
   constructor(options: Options) {
     this.selectors = options.selectors;
@@ -32,6 +33,11 @@ export class MySlider implements Slider {
     this.mode = options.mode;
     this.parameters = options.parameters;
     this.autoplayTimer = null;
+
+    if (options.eventsAndHandlers !== undefined) {
+      this.eventsAndHandlers = options.eventsAndHandlers;
+    }
+
 
     if (this.mode === 'Single item') {
       this.parameters.slidesToShow = 1;
@@ -75,6 +81,10 @@ export class MySlider implements Slider {
 
     if (this.parameters.autoplay === true) {
       this.setAutoplay();
+    }
+
+    if (this.eventsAndHandlers !== undefined) {
+      this.addHandlers();
     }
   }
 
@@ -122,6 +132,13 @@ export class MySlider implements Slider {
     window.addEventListener('resize', () => this.recalculate());
   }
 
+  private addHandlers() {
+    for (let set of this.eventsAndHandlers) {
+      document.addEventListener(set.event, set.callback);
+    }
+
+  }
+
   private errorCheck() {
     const sliderStyle = this.slider.style;
 
@@ -164,6 +181,7 @@ export class MySlider implements Slider {
 
         this.buttonNext.classList.add('-inactive');
         if (this.buttonPrevious.classList.contains('-inactive')) this.buttonPrevious.classList.remove('-inactive');
+        document.dispatchEvent(new Event(SliderEvents.End));
 
       } else {
         if (this.buttonPrevious.classList.contains('-inactive')) this.buttonPrevious.classList.remove('-inactive');
@@ -195,7 +213,6 @@ export class MySlider implements Slider {
     for (let parametersSet of this.responsive) {
       breakpoints.push(parametersSet.breakpoint);
     }
-
     breakpoints.push(0);
 
     for (let i = 0; i < breakpoints.length - 1; i++) {
@@ -245,6 +262,8 @@ export class MySlider implements Slider {
       if (this.buttonPrevious.classList.contains('-inactive')) this.buttonPrevious.classList.remove('-inactive');
       if (this.buttonNext.classList.contains('-inactive')) this.buttonNext.classList.remove('-inactive');
     }
+    if (slideIndex !== 0)
+    setTimeout(() => document.dispatchEvent(new Event(SliderEvents.Change)));
   }
 
   loopEndToStart(delay: number = this.delayForLoop): void {
@@ -275,6 +294,7 @@ export class MySlider implements Slider {
         slide.remove();
       }
       this.activeSlides.pop();
+      document.dispatchEvent(new Event(SliderEvents.Loop));
     }, this.parameters.animationTime);
   }
 
@@ -311,6 +331,7 @@ export class MySlider implements Slider {
             slide.remove();
           }
           this.shift(this.lastSlideIndex, true, delay);
+          document.dispatchEvent(new Event(SliderEvents.Loop));
         }, this.parameters.animationTime);
       }, delay);
     }, 0)

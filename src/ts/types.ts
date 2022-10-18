@@ -48,5 +48,15 @@ export type Options = {
   mode: Mode,
   parameters: Parameters,
   responsive?: ResponsiveParameters[];
+  eventsAndHandlers?: {
+    event: SliderEvents,
+    callback: (...args: unknown[] | undefined) => void
+  }[]
 }
 
+
+export enum SliderEvents {
+  Change = 'slide:change',
+  End = 'slider:end',
+  Loop = 'slider:loop'
+}

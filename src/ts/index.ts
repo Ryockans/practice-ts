@@ -1,4 +1,5 @@
 import {MySlider} from "./slider";
+import {SliderEvents} from "./types";
 
 const slider = new MySlider({
   selectors: {
@@ -17,8 +18,22 @@ const slider = new MySlider({
     slidesToScroll: 2,
     isLooped: true,
     autoplay: true,
-    autoplayInterval: 10000
+    autoplayInterval: 10000,
   },
+
+  eventsAndHandlers: [{
+    event: SliderEvents.Loop,
+    callback: () => {
+      console.dir('Перемотка')
+    }
+  },
+    {
+      event: SliderEvents.Change,
+      callback: () => {
+      console.dir('Смена слайда')
+      }
+    },
+ ],
 
   responsive: [
     {
