@@ -5,6 +5,8 @@ export interface Slider {
 
   shift(slideIndex: number, forLoop: boolean, ms: number): void;
 
+  setSliderParameters();
+
   loopStartToEnd(): void;
 
   loopEndToStart(): void;
@@ -27,7 +29,10 @@ export type Parameters = {
   isLooped: boolean,
 }
 
-export type ResponsiveParameters = Parameters & {breakpoint: number}
+export type ResponsiveParameters = {
+  breakpoint: number;
+  parameters: Parameters;
+}
 
 export type Options = {
   selectors: {

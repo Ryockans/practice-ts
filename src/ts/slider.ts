@@ -12,8 +12,10 @@ export class MySlider implements Slider {
   switchButtons: HTMLElement[];
   mode: Mode;
   parameters: Parameters;
+  innateParameters?: Parameters;
   responsive?: ResponsiveParameters[];
   currentSlideIndex: number;
+  currentBreakpoint: number | 'max';
 
   constructor(options: Options) {
     this.selectors = options.selectors;
@@ -41,6 +43,8 @@ export class MySlider implements Slider {
 
     if (this.mode === 'Multiple item' && options.responsive !== undefined) {
       this.responsive = options.responsive;
+      this.responsive.sort((a, b) => b.breakpoint - a.breakpoint);
+      this.innateParameters = this.parameters;
     }
   }
 
@@ -58,13 +62,14 @@ export class MySlider implements Slider {
 
     this.slider.style.transition = `transform ${this.parameters.animationTime}ms`;
 
+    this.currentSlideIndex = 0;
+
+    if (this.responsive !== undefined) this.setSliderParameters();
+
+
     this.createDots();
 
     this.addListeners();
-
-    if (!this.parameters.isLooped) {
-      this.toggleButtons(0);
-    }
   }
 
   createDots() {
@@ -84,8 +89,15 @@ export class MySlider implements Slider {
       }
     }
 
-    this.switchButtons[0].classList.add('-active');
-    this.currentSlideIndex = 0;
+    this.switchButtons[this.currentSlideIndex].classList.add('-active');
+  }
+
+  private clearSlidesAndDots() {
+    while (this.activeSlides.length !== 0) this.activeSlides.pop();
+    while (this.switchButtons.length !== 0) {
+      this.switchButtons[this.switchButtons.length - 1].remove();
+      this.switchButtons.pop();
+    }
   }
 
   addListeners() {
@@ -159,7 +171,47 @@ export class MySlider implements Slider {
     this.slider.style.transition = 'none';
     this.shift(this.currentSlideIndex);
     setTimeout(() => this.slider.style.transition = `transform ${this.parameters.animationTime}ms`, 0);
+
+    if (this.responsive !== undefined) {
+      this.clearSlidesAndDots();
+      this.setSliderParameters();
+      this.createDots()
+    }
   }
+
+
+  setSliderParameters() {
+    const breakpoints: number[] = [];
+    const windowWidth = document.documentElement.clientWidth;
+
+    for (let parametersSet of this.responsive) {
+      breakpoints.push(parametersSet.breakpoint);
+    }
+
+    breakpoints.push(0);
+
+    for (let i = 0; i < breakpoints.length - 1; i++) {
+      const parametersSet = this.responsive[i].parameters;
+      if (i === 0) {
+        if (windowWidth > breakpoints[i] && this.currentBreakpoint !== 'max') {
+          this.parameters = this.innateParameters;
+          this.currentBreakpoint = 'max';
+          if (this.currentSlideIndex >= this.activeSlides.length) this.currentSlideIndex = 0;
+        }
+      }
+
+      if (windowWidth < breakpoints[i] && windowWidth > breakpoints[i + 1] && this.currentBreakpoint !== breakpoints[i]) {
+        this.parameters = parametersSet;
+        this.currentBreakpoint = breakpoints[i];
+        if (this.currentSlideIndex >= this.activeSlides.length) this.currentSlideIndex = 0;
+      }
+
+      if (!this.parameters.isLooped) {
+        this.toggleButtons(0);
+      }
+    }
+  }
+
 
   shift(slideIndex, isLastScreen: boolean = false, delay = this.parameters.animationTime) {
     let targetSlide = this.activeSlides[slideIndex];
@@ -181,6 +233,9 @@ export class MySlider implements Slider {
 
     if (!this.parameters.isLooped) {
       this.toggleButtons();
+    } else {
+      if (this.buttonPrevious.classList.contains('-inactive')) this.buttonPrevious.classList.remove('-inactive');
+      if (this.buttonNext.classList.contains('-inactive')) this.buttonNext.classList.remove('-inactive');
     }
   }
 
