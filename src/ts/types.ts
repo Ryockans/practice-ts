@@ -27,6 +27,8 @@ export type Parameters = {
   slidesToShow?: number,
   slidesToScroll?: number,
   isLooped: boolean,
+  autoplay?: true,
+  autoplayInterval?: number
 }
 
 export type ResponsiveParameters = {

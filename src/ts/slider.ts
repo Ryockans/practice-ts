@@ -16,6 +16,7 @@ export class MySlider implements Slider {
   responsive?: ResponsiveParameters[];
   currentSlideIndex: number;
   currentBreakpoint: number | 'max';
+  autoplayTimer?: ReturnType<typeof setTimeout> | null
 
   constructor(options: Options) {
     this.selectors = options.selectors;
@@ -29,12 +30,8 @@ export class MySlider implements Slider {
     this.activeSlides = [];
 
     this.mode = options.mode;
-    this.parameters = {
-      animationTime: options.parameters.animationTime,
-      slidesToShow: options.parameters.slidesToShow,
-      slidesToScroll: options.parameters.slidesToScroll,
-      isLooped: options.parameters.isLooped,
-    };
+    this.parameters = options.parameters;
+    this.autoplayTimer = null;
 
     if (this.mode === 'Single item') {
       this.parameters.slidesToShow = 1;
@@ -46,7 +43,13 @@ export class MySlider implements Slider {
       this.responsive.sort((a, b) => b.breakpoint - a.breakpoint);
       this.innateParameters = this.parameters;
     }
+
+    if (this.parameters.autoplay === true && this.parameters.autoplayInterval === undefined) {
+      this.parameters.autoplayInterval = 2000;
+    }
   }
+
+  private delayForLoop = 10;
 
   private get sliderStart() {
     return this.slider.getBoundingClientRect().left;
@@ -66,10 +69,13 @@ export class MySlider implements Slider {
 
     if (this.responsive !== undefined) this.setSliderParameters();
 
-
     this.createDots();
 
     this.addListeners();
+
+    if (this.parameters.autoplay === true) {
+      this.setAutoplay();
+    }
   }
 
   createDots() {
@@ -168,15 +174,17 @@ export class MySlider implements Slider {
   }
 
   recalculate() {
+    this.stopAutoplay();
     this.slider.style.transition = 'none';
     this.shift(this.currentSlideIndex);
     setTimeout(() => this.slider.style.transition = `transform ${this.parameters.animationTime}ms`, 0);
 
-    if (this.responsive !== undefined) {
+    if (this.responsive !== undefined && this.responsive.length > 0) {
       this.clearSlidesAndDots();
       this.setSliderParameters();
       this.createDots()
     }
+    this.setAutoplay();
   }
 
 
@@ -239,7 +247,7 @@ export class MySlider implements Slider {
     }
   }
 
-  loopEndToStart(delay: number = 10): void {
+  loopEndToStart(delay: number = this.delayForLoop): void {
     const slideArray: HTMLElement[] = [];
     const style = this.slider.style;
 
@@ -270,7 +278,7 @@ export class MySlider implements Slider {
     }, this.parameters.animationTime);
   }
 
-  loopStartToEnd(delay: number = 10): void {
+  loopStartToEnd(delay: number = this.delayForLoop): void {
     const slideArray: HTMLElement[] = [];
     const style = this.slider.style;
 
@@ -331,7 +339,7 @@ export class MySlider implements Slider {
     return this.switchButtons.indexOf(sliderSwitch);
   }
 
-  nextSlide() {
+  nextSlide(auto: boolean = false) {
     const oldIndex = this.currentSlideIndex;
 
     this.changeActiveButton(this.currentSlideIndex + 1);
@@ -344,6 +352,10 @@ export class MySlider implements Slider {
     }
 
     this.shift(this.currentSlideIndex);
+    if (!auto) {
+      this.stopAutoplay()
+      this.setAutoplay()
+    }
   }
 
   previousSlide() {
@@ -359,10 +371,35 @@ export class MySlider implements Slider {
     }
 
     this.shift(this.currentSlideIndex);
+    this.stopAutoplay()
+    this.setAutoplay()
   }
 
   switchToSlide(slideIndex) {
     this.changeActiveButton(slideIndex);
     this.shift(slideIndex);
+    this.stopAutoplay()
+    this.setAutoplay()
+  }
+
+  private setAutoplay() {
+    if (this.parameters.autoplay !== true || this.autoplayTimer !== null) return;
+
+    const that = this;
+
+    this.autoplayTimer = setTimeout(nextSlideAuto, this.parameters.autoplayInterval + this.parameters.animationTime + this.delayForLoop);
+
+    function nextSlideAuto() {
+      that.nextSlide(true);
+
+      that.autoplayTimer = setTimeout(nextSlideAuto, that.parameters.autoplayInterval + that.parameters.animationTime + that.delayForLoop);
+    }
+  }
+
+  private stopAutoplay() {
+    if (this.parameters.autoplay === true) {
+      clearTimeout(this.autoplayTimer);
+      this.autoplayTimer = null;
+    }
   }
 }

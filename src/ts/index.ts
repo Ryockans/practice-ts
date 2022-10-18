@@ -12,10 +12,12 @@ const slider = new MySlider({
 
   mode: "Multiple item",
   parameters: {
-    animationTime: 500,
+    animationTime: 1000, // ms
     slidesToShow: 4,
     slidesToScroll: 2,
     isLooped: true,
+    autoplay: true,
+    autoplayInterval: 10000
   },
 
   responsive: [
