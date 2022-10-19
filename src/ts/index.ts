@@ -13,27 +13,12 @@ const slider = new MySlider({
 
   mode: "Multiple item",
   parameters: {
-    animationTime: 1000, // ms
+    animationTime: 1000,
     slidesToShow: 4,
     slidesToScroll: 2,
     isLooped: true,
     autoplay: true,
-    autoplayInterval: 10000,
   },
-
-  eventsAndHandlers: [{
-    event: SliderEvents.Loop,
-    callback: () => {
-      console.dir('Перемотка')
-    }
-  },
-    {
-      event: SliderEvents.Change,
-      callback: () => {
-      console.dir('Смена слайда')
-      }
-    },
- ],
 
   responsive: [
     {
@@ -63,7 +48,28 @@ const slider = new MySlider({
         isLooped: true,
       }
     }
-  ]
+  ],
+
+  eventsAndHandlers: [
+    {
+    event: SliderEvents.Loop,
+    callback: () => {
+      console.dir('Перемотка')
+    }
+  },
+    {
+      event: SliderEvents.Change,
+      callback: () => {
+        console.dir('Смена слайда')
+      }
+    },
+    {
+      event: SliderEvents.End,
+      callback: () => {
+        console.dir('Конец слайдера')
+      }
+    }
+  ],
 
 });
 

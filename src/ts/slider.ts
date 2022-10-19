@@ -136,27 +136,41 @@ export class MySlider implements Slider {
     for (let set of this.eventsAndHandlers) {
       document.addEventListener(set.event, set.callback);
     }
-
   }
 
   private errorCheck() {
-    const sliderStyle = this.slider.style;
+    let errorMessage: string = 'none';
 
     if (this.parameters.slidesToShow < this.parameters.slidesToScroll) {
-      this.slider.innerHTML = 'ERROR! <br> SlidesToShow must be more than SlidesToScroll';
-      sliderStyle.backgroundColor = 'red';
-      sliderStyle.padding = '10px';
-      sliderStyle.width = '100%';
-      sliderStyle.height = '200px';
-      sliderStyle.fontSize = '22px';
-      sliderStyle.fontFamily = '"Comic Sans MS", sans-serif';
-      sliderStyle.color = 'white';
-      sliderStyle.display = 'flex';
-      sliderStyle.justifyContent = 'center';
-      sliderStyle.alignItems = 'center';
-      sliderStyle.textAlign = 'center';
-      throw new Error('SlidesToShow must be more than SlidesToScroll');
+      errorMessage = 'SlidesToShow must be more than SlidesToScroll';
     }
+
+    if (this.parameters.autoplay && !this.parameters.isLooped) {
+      errorMessage = 'Autoplay is for looped slider only';
+    }
+
+    if (errorMessage !== 'none') {
+      this.stylizeSliderError();
+      this.slider.innerHTML = errorMessage;
+      throw new Error(errorMessage);
+    }
+
+  }
+
+  private stylizeSliderError() {
+    const sliderStyle = this.slider.style;
+    sliderStyle.backgroundColor = 'red';
+    sliderStyle.padding = '10px';
+    sliderStyle.width = '100%';
+    sliderStyle.height = '200px';
+    sliderStyle.fontSize = '22px';
+    sliderStyle.fontFamily = '"Comic Sans MS", sans-serif';
+    sliderStyle.color = 'white';
+    sliderStyle.display = 'flex';
+    sliderStyle.justifyContent = 'center';
+    sliderStyle.alignItems = 'center';
+    sliderStyle.textAlign = 'center';
+    sliderStyle.transform = 'none'
   }
 
   private forbidButtonsClick(ms) {
@@ -200,7 +214,8 @@ export class MySlider implements Slider {
     if (this.responsive !== undefined && this.responsive.length > 0) {
       this.clearSlidesAndDots();
       this.setSliderParameters();
-      this.createDots()
+      this.createDots();
+      this.errorCheck();
     }
     this.setAutoplay();
   }
@@ -237,7 +252,6 @@ export class MySlider implements Slider {
     }
   }
 
-
   shift(slideIndex, isLastScreen: boolean = false, delay = this.parameters.animationTime) {
     let targetSlide = this.activeSlides[slideIndex];
 
@@ -262,8 +276,6 @@ export class MySlider implements Slider {
       if (this.buttonPrevious.classList.contains('-inactive')) this.buttonPrevious.classList.remove('-inactive');
       if (this.buttonNext.classList.contains('-inactive')) this.buttonNext.classList.remove('-inactive');
     }
-    if (slideIndex !== 0)
-    setTimeout(() => document.dispatchEvent(new Event(SliderEvents.Change)));
   }
 
   loopEndToStart(delay: number = this.delayForLoop): void {
@@ -338,7 +350,6 @@ export class MySlider implements Slider {
   }
 
   changeActiveButton(index: number) {
-
     if (this.parameters.isLooped) {
       if (index > this.lastSlideIndex) index = 0;
       if (index < 0) index = this.lastSlideIndex;
@@ -363,7 +374,11 @@ export class MySlider implements Slider {
   nextSlide(auto: boolean = false) {
     const oldIndex = this.currentSlideIndex;
 
+    if (this.currentSlideIndex === this.lastSlideIndex && !this.parameters.isLooped) return;
+
     this.changeActiveButton(this.currentSlideIndex + 1);
+
+    setTimeout(() => document.dispatchEvent(new Event(SliderEvents.Change)));
 
     if (this.currentSlideIndex - oldIndex === -this.lastSlideIndex) {
       if (this.parameters.isLooped) {
@@ -382,8 +397,11 @@ export class MySlider implements Slider {
   previousSlide() {
     const oldIndex = this.currentSlideIndex;
 
+    if (this.currentSlideIndex === 0 && !this.parameters.isLooped) return;
+
     this.changeActiveButton(this.currentSlideIndex - 1);
 
+    setTimeout(() => document.dispatchEvent(new Event(SliderEvents.Change)));
     if (this.currentSlideIndex - oldIndex === this.lastSlideIndex) {
       if (this.parameters.isLooped) {
         this.loopStartToEnd()
@@ -394,6 +412,8 @@ export class MySlider implements Slider {
     this.shift(this.currentSlideIndex);
     this.stopAutoplay()
     this.setAutoplay()
+
+
   }
 
   switchToSlide(slideIndex) {
@@ -401,6 +421,7 @@ export class MySlider implements Slider {
     this.shift(slideIndex);
     this.stopAutoplay()
     this.setAutoplay()
+    setTimeout(() => document.dispatchEvent(new Event(SliderEvents.Change)));
   }
 
   private setAutoplay() {
